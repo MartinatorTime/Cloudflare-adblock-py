@@ -1,8 +1,8 @@
 import os
 import CloudFlare
 import requests
-from delete import DeleteAll
-from create import CreateAll
+from delete import *
+from create import *
 
 def GetBlockList(block_list_url):
     block_list = requests.get(block_list_url).text.splitlines()
