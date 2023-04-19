@@ -1,0 +1,84 @@
+name: 'Update Domain List'
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */5 * * *'
+
+env:
+  FOLDER: '${{ github.workspace }}/cloudflare/lists'
+  LIST_URLS_SECRET: ${{ secrets.LIST_URLS_SECRET }}
+  LIST_FNAME_SECRET: ${{ secrets.LIST_FNAME_SECRET }}
+
+permissions: read-all
+
+jobs:
+  auto-update:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: 📂 Checkout Branch
+        uses: actions/checkout@v3.3.0
+
+      #
+      # Delete previous files in folder
+      #
+      - name: 🗑️ Delete Previous Files
+        run: |
+          rm -f ${{ env.FOLDER }}/*.txt
+          
+      - name: 🔗 Fetch Domain Lists
+        working-directory: ${{ env.FOLDER }}
+        run: |
+          # Get URLs and filename from secrets
+          LIST_URLS="${{ secrets.LIST_URLS_SECRET }}"
+          LIST_FNAME="${{ secrets.LIST_FNAME_SECRET }}"
+          if [ -z "$LIST_URLS" ] || [ -z "$LIST_FNAME" ]; then
+            echo "Secrets not set"
+            exit 1
+          fi
+          echo "[*] Fetching and extracting domains from lists..."
+          for url in $LIST_URLS; do
+            fname="$(basename $url)"
+            echo "[*] Fetching list: ${url} -> ${fname}"
+            wget --quiet $url -O $fname
+            echo "[*] Sorting list..."
+            sort -u $fname > temp.txt
+            mv temp.txt $fname
+            echo "[*] Removing comments..."
+            grep -o '^[^#]*' $fname > temp.txt
+            mv temp.txt $fname
+            echo "[*] Extracting domains..."
+            cat $fname | awk '{ print $2 }' > temp.txt
+            mv temp.txt $fname
+            echo "[*] Removing localhost from list..."
+            sed -i '/localhost/d' $fname
+            sed -i '/127.0.0.1/d' $fname
+            sed -i '/0.0.0.0/d' $fname
+            sed -i '/^[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+/d' $fname
+            # Concatenate all files into one
+            cat $fname >> $LIST_FNAME
+          done
+          # Remove duplicates and sort again
+          sort -u $LIST_FNAME > temp.txt
+          mv temp.txt $LIST_FNAME
+          # Write the new list to file
+          echo "$LIST_FNAME" > list.txt
+      - name: 📝 Update List File
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: Your Name
+          author_email: your-email@example.com
+          message: 'Update domain list'
+          add: '*.txt'
+
+      - name: 🚀 Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: main
+          force: true

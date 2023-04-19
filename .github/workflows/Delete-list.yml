@@ -1,0 +1,28 @@
+name: Cloudflare Gateway List Deletion
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+  CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+jobs:
+  delete_lists:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete Gateway Lists
+        run: |
+          curl -X GET "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/gateway/lists" \
+          -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+          -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
+          -H "Content-Type: application/json" | jq -r '.result[].id' | while read id; do \
+          curl -X DELETE "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/gateway/lists/${id}" \
+          -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+          -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
+          -H "Content-Type: application/json"; done
