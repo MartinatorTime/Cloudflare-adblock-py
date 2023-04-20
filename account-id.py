@@ -1,9 +1,10 @@
 import requests
 import json
+import os
 
-# Set your email and API key
-email = "your-email"
-api_key = "your-api"
+# Get your email and API key from GitHub secrets
+email = os.environ['CF_API_EMAIL']
+api_key = os.environ['CF_API_TOKEN']
 
 # Set the endpoint for the API
 endpoint = "https://api.cloudflare.com/client/v4/accounts"
