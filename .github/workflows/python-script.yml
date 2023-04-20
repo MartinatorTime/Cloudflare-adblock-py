@@ -1,6 +1,9 @@
 name: My Python Workflow
 on:
-  workflow_dispatch:
+  workflow_run:
+    workflows: ["action-update-lists"]
+    types:
+      - completed
 
 jobs:
   build:
