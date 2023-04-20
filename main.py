@@ -19,7 +19,7 @@ def GetBlockList(block_list_url):
 def main():
     CF = CloudFlare.CloudFlare(email=email, token=token)
 
-    block_list_url = "https://github.com/MartinatorTime/Cloudflare-adblock-py/blob/main/cloudflare/lists/blockdomains.txt"
+    block_list_url = "https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/blockdomains.txt"
     block_list = GetBlockList(block_list_url)
     print("Block list has {} domains".format(len(block_list)))
 
