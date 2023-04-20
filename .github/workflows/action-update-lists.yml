@@ -1,4 +1,4 @@
-name: 'Update Domain List'
+name: 'Update Blocklist File'
 
 on:
   workflow_dispatch:

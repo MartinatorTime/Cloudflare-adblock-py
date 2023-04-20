@@ -1,8 +1,8 @@
-name: My Python Workflow
+name: Update Blocklist to Cloudflare Gateway
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Update Domain List"]
+    workflows: [Update Blocklist File]
     types:
       - completed
 
@@ -18,4 +18,4 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
     - name: Run Python script
-      run: python main.py
+      run: python create-upload.py

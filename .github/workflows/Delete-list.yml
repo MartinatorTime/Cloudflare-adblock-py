@@ -1,4 +1,4 @@
-name: Cloudflare Gateway List Deletion
+name: Cloudflare Gateway ALL List Deletion
 
 on:
   workflow_dispatch:
