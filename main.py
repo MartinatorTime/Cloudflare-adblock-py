@@ -23,7 +23,6 @@ def main():
     block_list = GetBlockList(block_list_url)
     print("Block list has {} domains".format(len(block_list)))
 
-    CF = CloudFlare.CloudFlare(email=email, token=token)
     DeleteAll(CF)
     CreateAll(CF, block_list)
 
