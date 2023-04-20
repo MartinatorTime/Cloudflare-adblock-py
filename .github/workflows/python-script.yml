@@ -1,7 +1,7 @@
 name: My Python Workflow
 on:
   workflow_run:
-    workflows: ["action-update-lists"]
+    workflows: ["Update Domain List"]
     types:
       - completed
 
