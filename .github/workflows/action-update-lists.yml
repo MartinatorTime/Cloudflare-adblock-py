@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: 📂 Checkout Branch
-        uses: actions/checkout@v3.3.0
+        uses: actions/checkout@v3.5.0
 
       #
       # Delete previous files in folder
@@ -71,7 +71,7 @@ jobs:
           # Write the new list to file
           echo "$LIST_FNAME" > list.txt
       - name: 📝 Update List File
-        uses: EndBug/add-and-commit@v9
+        uses: EndBug/add-and-commit@v9.1.0
         with:
           author_name: Your Name
           author_email: your-email@example.com
