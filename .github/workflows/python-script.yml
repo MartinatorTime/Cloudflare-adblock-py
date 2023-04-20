@@ -1,5 +1,6 @@
 name: My Python Workflow
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["Update Domain List"]
     types:
