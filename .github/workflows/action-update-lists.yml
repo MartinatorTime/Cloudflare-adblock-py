@@ -3,7 +3,8 @@ name: 'Update Domain List'
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */5 * * *'
+    - cron: '0 2 * * *'
+      timezone: Europe/Riga
 
 env:
   FOLDER: '${{ github.workspace }}/cloudflare/lists'
