@@ -3,8 +3,7 @@
 
 Automatic add gatway lists and rules to Cloudflare
 
-
-
+In main.py edit to your block list location.
 ## TNX for code
 
 - [@X-rays5](https://github.com/X-rays5/cloudflare_adblock)
