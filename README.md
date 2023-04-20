@@ -5,7 +5,9 @@ Automatic add gatway lists and rules to Cloudflare
 
 Every day at 2PM Update blocked domain list and upload to Gateway
 
-In create-upload.py edit to your block list location, will get in worflow logs below python script
+In create-upload.py edit to your block list location
+
+To get account id run action 3# Get Account ID  and will get it in action logs below python script
 ## TNX for code
 
 - [@X-rays5](https://github.com/X-rays5/cloudflare_adblock)
