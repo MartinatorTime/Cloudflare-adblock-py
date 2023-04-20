@@ -1,8 +1,8 @@
-name: Update Blocklist to Cloudflare Gateway
+name: '2# Update Blocklist to Cloudflare Gateway'
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: [Update Blocklist File]
+    workflows: [1# Update Blocklist File]
     types:
       - completed
 

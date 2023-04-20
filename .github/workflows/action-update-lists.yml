@@ -1,4 +1,4 @@
-name: 'Update Blocklist File'
+name: '1# Update Blocklist File'
 
 on:
   workflow_dispatch:

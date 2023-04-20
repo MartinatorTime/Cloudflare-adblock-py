@@ -1,4 +1,4 @@
-name: GitHub Cleanup
+name: '5# GitHub Cleanup'
 
 on:
   workflow_call:
