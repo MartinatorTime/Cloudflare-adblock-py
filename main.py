@@ -1,4 +1,12 @@
 import os
+
+try:
+    token = os.environ['CF_API_TOKEN']
+    email = os.environ['CF_API_EMAIL']
+    account_id = os.environ['CF_API_ACCOUNT_ID']
+except KeyError:
+    print('CF_API_TOKEN, CF_API_EMAIL or CF_API_ACCOUNT_ID environment variable not set')
+
 import CloudFlare
 import requests
 from delete import *
@@ -9,13 +17,7 @@ def GetBlockList(block_list_url):
     return block_list
 
 def main():
-    try:
-        token = os.environ['CF_API_TOKEN']
-        email = os.environ['CF_API_EMAIL']
-        account_id = os.environ['CF_API_ACCOUNT_ID']
-    except KeyError:
-        print('CF_API_TOKEN, CF_API_EMAIL or CF_API_ACCOUNT_ID environment variable not set')
-        return
+    CF = CloudFlare.CloudFlare(email=email, token=token)
 
     block_list_url = "https://raw.githubusercontent.com/MartinatorTime/cloudflare-adblock/master/cloudflare/lists/pihole_domain_list.txt"
     block_list = GetBlockList(block_list_url)
