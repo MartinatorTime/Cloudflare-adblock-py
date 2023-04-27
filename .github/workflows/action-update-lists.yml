@@ -80,8 +80,11 @@ jobs:
           message: 'Update domain list'
           add: '*.txt'
 
-      - name: 🚀 Push Changes
-        uses: ad-m/github-push-action@master
-        with:
-          branch: main
-          force: true 
+      - name: Force push changes
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          # ... Make the necessary changes to files ...
+          git add .
+          git commit -m "Updated Blocklist"
+          git push --force
