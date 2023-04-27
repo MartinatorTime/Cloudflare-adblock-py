@@ -14,7 +14,7 @@ env:
 permissions: read-all
 
 jobs:
-  force-push:
+  auto-update:
     runs-on: ubuntu-latest
 
     permissions:
@@ -23,11 +23,6 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Use Node.js 16.x
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16.x'
-
       - name: 📂 Checkout Branch
         uses: actions/checkout@v3.5.0
         with:
@@ -84,15 +79,7 @@ jobs:
           author_email: your-email@example.com
           message: 'Update domain list'
           add: '*.txt'
-        env:
-          NODE_VERSION: '16.x'
 
       - name: Force push changes
         run: |
           git push --force
-      
-      - name: Set output
-        env:
-          MY_OUTPUT: ${{ steps.commit.outputs.sha }}
-        run: |
-          echo "MY_OUTPUT=${{ env.MY_OUTPUT }}" >> $GITHUB_ENV
