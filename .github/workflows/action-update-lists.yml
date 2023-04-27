@@ -14,7 +14,7 @@ env:
 permissions: read-all
 
 jobs:
-  auto-update:
+  force-push:
     runs-on: ubuntu-latest
 
     permissions:
@@ -82,9 +82,4 @@ jobs:
 
       - name: Force push changes
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          # ... Make the necessary changes to files ...
-          git add .
-          git commit -m "Updated Blocklist"
           git push --force
