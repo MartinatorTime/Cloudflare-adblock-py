@@ -26,8 +26,8 @@ jobs:
       - name: 📂 Checkout Branch
         uses: actions/checkout@v3.5.0
         with:
-         token: ${{ secrets.FORCE_PUSH_TOKEN }}
-         ref: main
+          token: ${{ secrets.FORCE_PUSH_TOKEN }}
+          ref: main
       #
       # Delete previous files in folder
       #
@@ -80,11 +80,8 @@ jobs:
           message: 'Update domain list'
           add: '*.txt'
 
-      - name: Force push changes
-          run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          # ... Make the necessary changes to files ...
-          git add .
-          git commit -m "Updated Blocklist"
-          git push --force
+      - name: 🚀 Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: main
+          force: true 
