@@ -92,6 +92,6 @@ jobs:
         run: |
           git push --force
       
-      - name: Set output
-        run: 
-          echo "::set-env name=MY_OUTPUT::${{ steps.commit.outputs.sha }}"
+      #- name: Set output
+      #  run: 
+      #    echo "::set-env name=MY_OUTPUT::${{ steps.commit.outputs.sha }}"
