@@ -83,11 +83,3 @@ jobs:
       - name: Force push changes
         run: |
           git push --force
-          
-      - name: Send Telegram Message
-        uses: appleboy/telegram-action@master
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-        with:
-          message: 'Blocklist updated'
