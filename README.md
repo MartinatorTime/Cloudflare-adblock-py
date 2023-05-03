@@ -7,6 +7,8 @@ Every day at 2PM Update blocked domain list and upload to Gateway
 
 In create-upload.py edit to your block list location
 
+Maximum 300k in blocklist, automatic limit the list. Gateway restriction.
+
 To get account id run action 3# Get Account ID  and will get it in action logs below python script
 ## TNX for code
 
