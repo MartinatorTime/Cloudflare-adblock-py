@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: 📂 Checkout Branch
-        uses: actions/checkout@v3.5.0
+        uses: actions/checkout@master
         with:
           token: ${{ secrets.FORCE_PUSH_TOKEN }}
           ref: main
@@ -76,7 +76,7 @@ jobs:
           # Write the new list to file
           echo "$LIST_FNAME" > list.txt
       - name: 📝 Update List File
-        uses: EndBug/add-and-commit@v9.1.0
+        uses: EndBug/add-and-commit@master
         with:
           author_name: Your Name
           author_email: your-email@example.com
