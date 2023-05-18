@@ -1,15 +1,21 @@
-name: '5# GitHub Cleanup'
+name: Clear Action Runs
 
 on:
-  workflow_call:
-    secrets:
-      GH_TOKEN:
-        required: true
-  workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
-  cleanup:
-    name: GitHub Cleanup
-    uses: nikhilbadyal/ghactions/.github/workflows/github-cleanup.yml@main
-    secrets:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  clear-runs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Delete workflow runs
+        run: |
+          TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          RUNS=$(curl -s -H "Authorization: token $TOKEN" "https://api.github.com/repos/$OWNER/$REPO/actions/runs" | jq -r '.workflow_runs[].id')
+          for run in $RUNS; do
+            curl -X DELETE -s -H "Authorization: token $TOKEN" "https://api.github.com/repos/$OWNER/$REPO/actions/runs/$run"
+          done
