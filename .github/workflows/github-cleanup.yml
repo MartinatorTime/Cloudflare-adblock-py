@@ -1,6 +1,7 @@
 name: Clear Action Runs
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
 
