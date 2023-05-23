@@ -76,7 +76,7 @@ jobs:
           # Write the new list to file
           echo "$LIST_FNAME" > list.txt
       - name: 📝 Update List File
-        uses: EndBug/add-and-commit@master
+        uses: EndBug/add-and-commit@v9.1.3
         with:
           author_name: Your Name
           author_email: your-email@example.com
