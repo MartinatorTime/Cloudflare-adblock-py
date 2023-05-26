@@ -14,28 +14,20 @@ jobs:
       
       - name: Download blocked domains list
         run: |
-          curl -o blocked_domains.txt https://example.com/blocked_domains.txt
+          curl -o blocked_domains.txt https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/hosts.txt
       
       - name: Split domains into files
         run: |
           mkdir domains
           split -l 1000 blocked_domains.txt domains/list_
       
-      - name: Get Cloudflare API Token
-        id: get_api_token
-        run: echo "::set-output name=api_token::${{ secrets.CF_API_KEY }}"
-      
-      - name: Get Cloudflare Account ID
-        id: get_account_id
-        run: echo "::set-output name=account_id::${{ secrets.CF_API_ACCOUNT_ID }}"
-        
       - name: Upload domain lists to Cloudflare Gateway
         run: |
           for file in $(ls domains); do \
-            curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ steps.get_account_id.outputs.account_id }}/gateway/lists" \
-            -H "Authorization: Bearer ${{ steps.get_api_token.outputs.api_token }}" \
-            -H "X-Auth-Email: ${{ secrets.CF_API_EMAIL }}" \
+            curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_API_ACCOUNT_ID }}/gateway/lists" \
             -H "Content-Type: application/json" \
+            -H "X-Auth-Email: ${{ secrets.CF_API_EMAIL }}" \
+            -H "X-Auth-Key: ${{ secrets.CF_API_KEY }}" \
             --data "{\"name\":\"$file\",\"description\":\"Blocked domains list\",\"domains\":$(cat domains/$file)}"; \
           done
         
@@ -46,8 +38,8 @@ jobs:
             policy_json+=$(echo "{\"action\":\"block\",\"filter\":{\"expression\":\"(cf.client.bot.score lt 10) and (http.host in '${file}')\"}},"); \
           done
           policy_json=$(echo "${policy_json::-1}]}" | tr '\n' ' ')
-          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ steps.get_account_id.outputs.account_id }}/gateway/rules" \
-          -H "Authorization: Bearer ${{ steps.get_api_token.outputs.api_token }}" \
-          -H "X-Auth-Email: ${{ secrets.CF_API_EMAIL }}" \
+          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_API_ACCOUNT_ID }}/gateway/rules" \
           -H "Content-Type: application/json" \
+          -H "X-Auth-Email: ${{ secrets.CF_API_EMAIL }}" \
+          -H "X-Auth-Key: ${{ secrets.CF_API_KEY }}" \
           --data "$policy_json"
