@@ -1,4 +1,4 @@
-name: Create Cloudflare Gateway Firewall DNS Policy
+name: Block Domains Action
 
 on:
   push:
@@ -6,31 +6,46 @@ on:
       - main
 
 jobs:
-  create_policy:
+  block_domains_job:
     runs-on: ubuntu-latest
     steps:
-    - name: Download blocked domain list
-      run: |
-        curl -o blocked_domains.txt https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/hosts.txt
-    - name: Split domain list
-      run: |
-        split -l 1000 blocked_domains.txt list
-    - name: Upload domain lists to Cloudflare Gateway
-      run: |
-        for file in list*; do
-          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_API_ACCOUNT_ID }}/gateway/lists" \
-          -H "Authorization: Bearer ${{ secrets.CF_API_KEY }}" \
+      - name: Checkout code
+        uses: actions/checkout@master
+      
+      - name: Download blocked domains list
+        run: |
+          curl -o blocked_domains.txt https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/hosts.txt
+      
+      - name: Split domains into files
+        run: |
+          mkdir domains
+          split -l 1000 blocked_domains.txt domains/list_
+      
+      - name: Get Cloudflare API Token
+        id: get_api_token
+        run: echo "::set-output name=api_token::${{ secrets.CF_API_KEY }}"
+      
+      - name: Get Cloudflare Account ID
+        id: get_account_id
+        run: echo "::set-output name=account_id::${{ secrets.CF_API_ACCOUNT_ID }}"
+        
+      - name: Upload domain lists to Cloudflare Gateway
+        run: |
+          for file in $(ls domains); do \
+            curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ steps.get_account_id.outputs.account_id }}/gateway/lists" \
+            -H "Authorization: Bearer ${{ steps.get_api_token.outputs.api_token }}" \
+            -H "Content-Type: application/json" \
+            --data "{\"name\":\"$file\",\"description\":\"Blocked domains list\",\"domains\":$(cat domains/$file)}"; \
+          done
+        
+      - name: Create Firewall DNS Policy to block all domains
+        run: |
+          policy_json=$(echo "{\"name\":\"Block all domains policy\",\"rules\":[")
+          for file in $(ls domains); do \
+            policy_json+=$(echo "{\"action\":\"block\",\"filter\":{\"expression\":\"(cf.client.bot.score lt 10) and (http.host in '${file}')\"}},"); \
+          done
+          policy_json=$(echo "${policy_json::-1}]}" | tr '\n' ' ')
+          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ steps.get_account_id.outputs.account_id }}/gateway/rules" \
+          -H "Authorization: Bearer ${{ steps.get_api_token.outputs.api_token }}" \
           -H "Content-Type: application/json" \
-          --data '{"name":"blocked-domains-'$file'","type":"domain","items":"'$(cat $file | paste -sd "," -)'"}'
-        done
-    - name: Create Gateway Firewall DNS Policy
-      run: |
-        policy_rules=""
-        for file in list*; do
-          policy_rules+="(http.host contains \"blocked-domains-$file\") or "
-        done
-        policy_rules=${policy_rules::-4}
-        curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_API_ACCOUNT_ID }}/gateway/firewall/dns/policies" \
-        -H "Authorization: Bearer ${{ secrets.CF_API_KEY }}" \
-        -H "Content-Type: application/json" \
-        --data '{"name":"blocked-domains-policy","action":"block","rules":"'${policy_rules}'"}'
+          --data "$policy_json"
