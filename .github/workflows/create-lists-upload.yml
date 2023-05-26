@@ -4,28 +4,60 @@ on:
   workflow_dispatch:
 
 jobs:
-  block_domains:
+  block-domains:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Python
+    - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
 
-    - name: Install dependencies
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install requests
 
-    - name: Download and process domain list
+    - name: Download and process blocked domain list
+      env:
+        URL: https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/hosts.txt
       run: |
-        curl -L -o blocked_domains.txt "https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/hosts.txt"
-        python script.py
+        curl -s $URL > blocked_domains.txt
+        split -l 1000 blocked_domains.txt domain_list_
+
+    - name: Upload domain lists to Cloudflare Gateway and create firewall policy
       env:
         CF_API_KEY: ${{ secrets.CF_API_KEY }}
         CF_API_ACCOUNT_ID: ${{ secrets.CF_API_ACCOUNT_ID }}
         CF_API_EMAIL: ${{ secrets.CF_API_EMAIL }}
+      run: |
+        #!/bin/bash
+        set -e
+
+        # Upload domain lists to Cloudflare Gateway
+        lists_ids=()
+        for file in domain_list_*; do
+          response=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CF_API_ACCOUNT_ID/gateway/lists" \
+            -H "X-Auth-Email: $CF_API_EMAIL" \
+            -H "X-Auth-Key: $CF_API_KEY" \
+            -H "Content-Type: application/json" \
+            --data "{\"name\":\"$(basename $file)\",\"description\":\"Blocked domains from $(basename $file)\"}")
+          list_id=$(echo $response | python -c 'import sys, json; print(json.load(sys.stdin)["result"]["id"])')
+          lists_ids+=($list_id)
+        done
+
+        # Create DNS firewall policy
+        rule_expression="("
+        for list_id in "${lists_ids[@]}"; do
+          rule_expression+="dns.query.suffix.list('$list_id') OR "
+        done
+        rule_expression="${rule_expression% OR })"
+
+        curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CF_API_ACCOUNT_ID/gateway/rules" \
+          -H "X-Auth-Email: $CF_API_EMAIL" \
+          -H "X-Auth-Key: $CF_API_KEY" \
+          -H "Content-Type: application/json" \
+          --data "{\"expression\":\"$rule_expression\",\"action\":\"block\",\"description\":\"Block all uploaded domain lists\"}"
