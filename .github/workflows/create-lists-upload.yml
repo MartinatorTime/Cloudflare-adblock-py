@@ -1,0 +1,36 @@
+name: Create Cloudflare Gateway Firewall DNS Policy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create_policy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download blocked domain list
+      run: |
+        curl -o blocked_domains.txt https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/hosts.txt
+    - name: Split domain list
+      run: |
+        split -l 1000 blocked_domains.txt list
+    - name: Upload domain lists to Cloudflare Gateway
+      run: |
+        for file in list*; do
+          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_API_ACCOUNT_ID }}/gateway/lists" \
+          -H "Authorization: Bearer ${{ secrets.CF_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          --data '{"name":"blocked-domains-'$file'","type":"domain","items":"'$(cat $file | paste -sd "," -)'"}'
+        done
+    - name: Create Gateway Firewall DNS Policy
+      run: |
+        policy_rules=""
+        for file in list*; do
+          policy_rules+="(http.host contains \"blocked-domains-$file\") or "
+        done
+        policy_rules=${policy_rules::-4}
+        curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_API_ACCOUNT_ID }}/gateway/firewall/dns/policies" \
+        -H "Authorization: Bearer ${{ secrets.CF_API_KEY }}" \
+        -H "Content-Type: application/json" \
+        --data '{"name":"blocked-domains-policy","action":"block","rules":"'${policy_rules}'"}'
