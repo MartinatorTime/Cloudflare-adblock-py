@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
       
       - name: Download blocked domains list
         run: |
-          curl -o blocked_domains.txt https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/hosts.txt
+          curl -o blocked_domains.txt https://example.com/blocked_domains.txt
       
       - name: Split domains into files
         run: |
@@ -34,6 +34,7 @@ jobs:
           for file in $(ls domains); do \
             curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ steps.get_account_id.outputs.account_id }}/gateway/lists" \
             -H "Authorization: Bearer ${{ steps.get_api_token.outputs.api_token }}" \
+            -H "X-Auth-Email: ${{ secrets.CF_API_EMAIL }}" \
             -H "Content-Type: application/json" \
             --data "{\"name\":\"$file\",\"description\":\"Blocked domains list\",\"domains\":$(cat domains/$file)}"; \
           done
@@ -47,5 +48,6 @@ jobs:
           policy_json=$(echo "${policy_json::-1}]}" | tr '\n' ' ')
           curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ steps.get_account_id.outputs.account_id }}/gateway/rules" \
           -H "Authorization: Bearer ${{ steps.get_api_token.outputs.api_token }}" \
+          -H "X-Auth-Email: ${{ secrets.CF_API_EMAIL }}" \
           -H "Content-Type: application/json" \
           --data "$policy_json"
