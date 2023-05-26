@@ -1,4 +1,4 @@
-name: Block Domains
+name: Cloudflare Adblock
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  block_domains:
+  adblock:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,19 +16,17 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'
+        python-version: 3.x
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install requests
 
-    - name: Download and split blocked domain list
-      run: python download_and_split.py
-
-    - name: Upload domain lists and create DNS policy
+    - name: Download, split, upload and create rules
       env:
         CF_API_KEY: ${{ secrets.CF_API_KEY }}
         CF_API_ACCOUNT_ID: ${{ secrets.CF_API_ACCOUNT_ID }}
         CF_API_EMAIL: ${{ secrets.CF_API_EMAIL }}
-      run: python upload_and_create_policy.py
+      run: |
+        python cloudflare_adblock.py
