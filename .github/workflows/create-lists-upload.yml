@@ -1,45 +1,31 @@
-name: Block Domains Action
+name: Block Domains
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  block_domains_job:
+  block_domains:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      
-      - name: Download blocked domains list
-        run: |
-          curl -o blocked_domains.txt https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/hosts.txt
-      
-      - name: Split domains into files
-        run: |
-          mkdir domains
-          split -l 1000 blocked_domains.txt domains/list_
-      
-      - name: Upload domain lists to Cloudflare Gateway
-        run: |
-          for file in $(ls domains); do \
-            curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_API_ACCOUNT_ID }}/gateway/lists" \
-            -H "Content-Type: application/json" \
-            -H "X-Auth-Email: ${{ secrets.CF_API_EMAIL }}" \
-            -H "X-Auth-Key: ${{ secrets.CF_API_KEY }}" \
-            --data "{\"name\":\"$file\",\"description\":\"Blocked domains list\",\"domains\":\"$(cat domains/$file)\"}"; \
-          done
-        
-      - name: Create Firewall DNS Policy to block all domains
-        run: |
-          policy_json=$(echo "{\"name\":\"Block all domains policy\",\"rules\":[")
-          for file in $(ls domains); do \
-            policy_json+=$(echo "{\"action\":\"block\",\"filter\":{\"expression\":\"(cf.client.bot.score lt 10) and (http.host in '${file}')\"}},"); \
-          done
-          policy_json=$(echo "${policy_json::-1}]}" | tr '\n' ' ')
-          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_API_ACCOUNT_ID }}/gateway/rules" \
-          -H "Content-Type: application/json" \
-          -H "X-Auth-Email: ${{ secrets.CF_API_EMAIL }}" \
-          -H "X-Auth-Key: ${{ secrets.CF_API_KEY }}" \
-          --data "$policy_json"
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Download and process domain list
+      run: |
+        curl -L -o blocked_domains.txt "https://url-to-blocked-domain-list.com"
+        python ./script.py
+      env:
+        CF_API_KEY: ${{ secrets.CF_API_KEY }}
+        CF_API_ACCOUNT_ID: ${{ secrets.CF_API_ACCOUNT_ID }}
+        CF_API_EMAIL: ${{ secrets.CF_API_EMAIL }}
