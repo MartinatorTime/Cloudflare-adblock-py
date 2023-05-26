@@ -23,7 +23,7 @@ jobs:
 
     - name: Download and process domain list
       run: |
-        curl -L -o blocked_domains.txt "https://url-to-blocked-domain-list.com"
+        curl -L -o blocked_domains.txt "https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/hosts.txt"
         python ./script.py
       env:
         CF_API_KEY: ${{ secrets.CF_API_KEY }}
