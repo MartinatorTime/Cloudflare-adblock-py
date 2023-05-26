@@ -1,63 +1,82 @@
 name: Block Domains
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
-  block-domains:
+  block_domains:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@master
 
-    - name: Setup Python
-      uses: actions/setup-python@v2
+    - name: Set up Python
+      uses: actions/setup-python@master
       with:
         python-version: '3.x'
 
-    - name: Install Python dependencies
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install requests
 
-    - name: Download and process blocked domain list
-      env:
-        URL: https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/hosts.txt
+    - name: Download and split blocked domain list
       run: |
-        curl -s $URL > blocked_domains.txt
-        split -l 1000 blocked_domains.txt domain_list_
+        import requests
 
-    - name: Upload domain lists to Cloudflare Gateway and create firewall policy
+        url = "https://raw.githubusercontent.com/MartinatorTime/Cloudflare-adblock-py/main/cloudflare/lists/hosts.txt"
+        response = requests.get(url)
+        domains = response.text.split('\n')
+        
+        for i in range(0, len(domains), 1000):
+            with open(f"list_{i//1000 + 1}.txt", "w") as f:
+                f.write("\n".join(domains[i:i+1000]))
+
+    - name: Upload domain lists and create DNS policy
       env:
         CF_API_KEY: ${{ secrets.CF_API_KEY }}
         CF_API_ACCOUNT_ID: ${{ secrets.CF_API_ACCOUNT_ID }}
         CF_API_EMAIL: ${{ secrets.CF_API_EMAIL }}
       run: |
-        #!/bin/bash
-        set -e
+        import json
+        import os
+        import requests
 
-        # Upload domain lists to Cloudflare Gateway
-        lists_ids=()
-        for file in domain_list_*; do
-          response=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CF_API_ACCOUNT_ID/gateway/lists" \
-            -H "X-Auth-Email: $CF_API_EMAIL" \
-            -H "X-Auth-Key: $CF_API_KEY" \
-            -H "Content-Type: application/json" \
-            --data "{\"name\":\"$(basename $file)\",\"description\":\"Blocked domains from $(basename $file)\"}")
-          list_id=$(echo $response | python -c 'import sys, json; print(json.load(sys.stdin)["result"]["id"])')
-          lists_ids+=($list_id)
-        done
+        headers = {
+            "X-Auth-Email": os.environ["CF_API_EMAIL"],
+            "X-Auth-Key": os.environ["CF_API_KEY"],
+            "Content-Type": "application/json"
+        }
 
-        # Create DNS firewall policy
-        rule_expression="("
-        for list_id in "${lists_ids[@]}"; do
-          rule_expression+="dns.query.suffix.list('$list_id') OR "
-        done
-        rule_expression="${rule_expression% OR })"
+        base_url = f"https://api.cloudflare.com/client/v4/accounts/{os.environ['CF_API_ACCOUNT_ID']}/gateway"
 
-        curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CF_API_ACCOUNT_ID/gateway/rules" \
-          -H "X-Auth-Email: $CF_API_EMAIL" \
-          -H "X-Auth-Key: $CF_API_KEY" \
-          -H "Content-Type: application/json" \
-          --data "{\"expression\":\"$rule_expression\",\"action\":\"block\",\"description\":\"Block all uploaded domain lists\"}"
+        list_ids = []
+
+        for i in range(len(os.listdir())):
+            if not os.path.isfile(f"list_{i+1}.txt"):
+                break
+
+            with open(f"list_{i+1}.txt", "r") as f:
+                domains = f.read().split('\n')
+
+            data = {
+                "name": f"Blocked_Domains_List_{i+1}",
+                "description": f"List of blocked domains (part {i+1})",
+                "items": domains
+            }
+
+            response = requests.post(f"{base_url}/lists", headers=headers, data=json.dumps(data))
+            list_id = response.json()["result"]["id"]
+            list_ids.append(list_id)
+
+        expression = " or ".join([f"list('{list_id}')" for list_id in list_ids])
+        rule_data = {
+            "action": "block",
+            "expression": expression,
+            "description": "Block all uploaded domain lists"
+        }
+
+        response = requests.post(f"{base_url}/rules", headers=headers, data=json.dumps(rule_data))
