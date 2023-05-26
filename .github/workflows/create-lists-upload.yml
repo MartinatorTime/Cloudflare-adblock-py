@@ -28,7 +28,7 @@ jobs:
             -H "Content-Type: application/json" \
             -H "X-Auth-Email: ${{ secrets.CF_API_EMAIL }}" \
             -H "X-Auth-Key: ${{ secrets.CF_API_KEY }}" \
-            --data "{\"name\":\"$file\",\"description\":\"Blocked domains list\",\"domains\":$(cat domains/$file)}"; \
+            --data "{\"name\":\"$file\",\"description\":\"Blocked domains list\",\"domains\":\"$(cat domains/$file)\"}"; \
           done
         
       - name: Create Firewall DNS Policy to block all domains
