@@ -24,11 +24,11 @@ jobs:
         pip install requests
 
     - name: Download and split blocked domain list
-      run: python scripts/download_and_split.py
+      run: python download_and_split.py
 
     - name: Upload domain lists and create DNS policy
       env:
         CF_API_KEY: ${{ secrets.CF_API_KEY }}
         CF_API_ACCOUNT_ID: ${{ secrets.CF_API_ACCOUNT_ID }}
         CF_API_EMAIL: ${{ secrets.CF_API_EMAIL }}
-      run: python scripts/upload_and_create_policy.py
+      run: python upload_and_create_policy.py
